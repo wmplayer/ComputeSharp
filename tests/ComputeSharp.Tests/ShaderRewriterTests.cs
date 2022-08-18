@@ -191,6 +191,45 @@ public partial class ShaderRewriterTests
         }
     }
 
+    // See: https://github.com/Sergio0694/ComputeSharp/issues/298
+    [CombinatorialTestMethod]
+    [AllDevices]
+    public void ExternalMethodAccessingConstantInSameClass(Device device)
+    {
+        using ReadWriteBuffer<float> buffer = device.Get().AllocateReadWriteBuffer<float>(16);
+
+        device.Get().For(1, new ExternalMethodAccessingConstantInSameClassShader(buffer));
+
+        float[] results = buffer.ToArray();
+
+        foreach (float x in results)
+        {
+            Assert.AreEqual(3.14f, x);
+        }
+    }
+
+    [EmbeddedBytecode(DispatchAxis.X)]
+    [AutoConstructor]
+    internal partial struct ExternalMethodAccessingConstantInSameClassShader : IComputeShader
+    {
+        private readonly ReadWriteBuffer<float> buffer;
+
+        public void Execute()
+        {
+            buffer[ThreadIds.X] = ExternalMethodAccessingConstantInSameClassImpl.mainImage();
+        }
+    }
+
+    internal static class ExternalMethodAccessingConstantInSameClassImpl
+    {
+        private static readonly float TAU = 3.14f;
+
+        public static float mainImage()
+        {
+            return TAU;
+        }
+    }
+
     // See https://github.com/Sergio0694/ComputeSharp/issues/278
     [CombinatorialTestMethod]
     [AllDevices]
