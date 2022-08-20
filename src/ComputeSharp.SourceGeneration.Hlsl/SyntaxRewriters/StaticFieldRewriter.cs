@@ -24,13 +24,15 @@ internal sealed partial class StaticFieldRewriter : HlslSourceRewriter
     /// <param name="semanticModel">The <see cref="SemanticModelProvider"/> instance for the target syntax tree.</param>
     /// <param name="discoveredTypes">The set of discovered custom types.</param>
     /// <param name="constantDefinitions">The collection of discovered constant definitions.</param>
+    /// <param name="staticFieldDefinitions">The collection of discovered static field definitions.</param>
     /// <param name="diagnostics">The collection of produced <see cref="Diagnostic"/> instances.</param>
     public StaticFieldRewriter(
         SemanticModelProvider semanticModel,
         ICollection<INamedTypeSymbol> discoveredTypes,
         IDictionary<IFieldSymbol, string> constantDefinitions,
+        ICollection<IFieldSymbol> staticFieldDefinitions,
         ImmutableArray<Diagnostic>.Builder diagnostics)
-        : base(semanticModel, discoveredTypes, constantDefinitions, diagnostics)
+        : base(semanticModel, discoveredTypes, constantDefinitions, staticFieldDefinitions, diagnostics)
     {
     }
 

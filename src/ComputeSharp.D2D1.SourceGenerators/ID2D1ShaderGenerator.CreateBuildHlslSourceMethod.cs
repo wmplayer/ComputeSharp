@@ -52,6 +52,7 @@ partial class ID2D1ShaderGenerator
             HashSet<INamedTypeSymbol> discoveredTypes = new(SymbolEqualityComparer.Default);
             Dictionary<IMethodSymbol, MethodDeclarationSyntax> staticMethods = new(SymbolEqualityComparer.Default);
             Dictionary<IFieldSymbol, string> constantDefinitions = new(SymbolEqualityComparer.Default);
+            HashSet<IFieldSymbol> staticFieldDefinitions = new(SymbolEqualityComparer.Default);
 
             // Extract information on all captured fields
             GetInstanceFields(
@@ -63,8 +64,8 @@ partial class ID2D1ShaderGenerator
 
             // Explore the syntax tree and extract the processed info
             var semanticModelProvider = new SemanticModelProvider(compilation);
-            var (entryPoint, processedMethods) = GetProcessedMethods(diagnostics, structDeclaration, structDeclarationSymbol, semanticModelProvider, discoveredTypes, staticMethods, constantDefinitions, out bool methodsNeedD2D1RequiresScenePosition);
-            var staticFields = GetStaticFields(diagnostics, semanticModelProvider, structDeclaration, structDeclarationSymbol, discoveredTypes, constantDefinitions, out bool fieldsNeedD2D1RequiresScenePosition);
+            var (entryPoint, processedMethods) = GetProcessedMethods(diagnostics, structDeclaration, structDeclarationSymbol, semanticModelProvider, discoveredTypes, staticMethods, constantDefinitions, staticFieldDefinitions, out bool methodsNeedD2D1RequiresScenePosition);
+            var staticFields = GetStaticFields(diagnostics, semanticModelProvider, structDeclaration, structDeclarationSymbol, discoveredTypes, constantDefinitions, staticFieldDefinitions, out bool fieldsNeedD2D1RequiresScenePosition);
 
             // Process the discovered types and constants
             var declaredTypes = GetDeclaredTypes(diagnostics, structDeclarationSymbol, discoveredTypes);
@@ -188,6 +189,7 @@ partial class ID2D1ShaderGenerator
         /// <param name="structDeclarationSymbol">The type symbol for the shader type.</param>
         /// <param name="discoveredTypes">The collection of currently discovered types.</param>
         /// <param name="constantDefinitions">The collection of discovered constant definitions.</param>
+        /// <param name="staticFieldDefinitions">The collection of discovered static field definitions.</param>
         /// <param name="needsD2D1RequiresScenePosition">Whether or not the shader needs the <c>[D2DRequiresScenePosition]</c> annotation.</param>
         /// <returns>A sequence of static constant fields in <paramref name="structDeclarationSymbol"/>.</returns>
         private static ImmutableArray<(string Name, string TypeDeclaration, string? Assignment)> GetStaticFields(
@@ -197,6 +199,7 @@ partial class ID2D1ShaderGenerator
             INamedTypeSymbol structDeclarationSymbol,
             ICollection<INamedTypeSymbol> discoveredTypes,
             IDictionary<IFieldSymbol, string> constantDefinitions,
+            ICollection<IFieldSymbol> staticFieldDefinitions,
             out bool needsD2D1RequiresScenePosition)
         {
             ImmutableArray<(string, string, string?)>.Builder builder = ImmutableArray.CreateBuilder<(string, string, string?)>();
@@ -235,6 +238,7 @@ partial class ID2D1ShaderGenerator
                         semanticModel,
                         discoveredTypes,
                         constantDefinitions,
+                        staticFieldDefinitions,
                         diagnostics);
 
                     string? assignment = staticFieldRewriter.Visit(variableDeclarator)?.NormalizeWhitespace(eol: "\n").ToFullString();
@@ -258,6 +262,7 @@ partial class ID2D1ShaderGenerator
         /// <param name="discoveredTypes">The collection of currently discovered types.</param>
         /// <param name="staticMethods">The set of discovered and processed static methods.</param>
         /// <param name="constantDefinitions">The collection of discovered constant definitions.</param>
+        /// <param name="staticFieldDefinitions">The collection of discovered static field definitions.</param>
         /// <param name="needsD2D1RequiresScenePosition">Whether or not the shader needs the <c>[D2DRequiresScenePosition]</c> annotation.</param>
         /// <returns>A sequence of processed methods in <paramref name="structDeclaration"/>, and the entry point.</returns>
         private static (string EntryPoint, ImmutableArray<(string Signature, string Definition)> Methods) GetProcessedMethods(
@@ -268,6 +273,7 @@ partial class ID2D1ShaderGenerator
             ICollection<INamedTypeSymbol> discoveredTypes,
             IDictionary<IMethodSymbol, MethodDeclarationSyntax> staticMethods,
             IDictionary<IFieldSymbol, string> constantDefinitions,
+            ICollection<IFieldSymbol> staticFieldDefinitions,
             out bool needsD2D1RequiresScenePosition)
         {
             // Find all declared methods in the type
@@ -303,6 +309,7 @@ partial class ID2D1ShaderGenerator
                     discoveredTypes,
                     staticMethods,
                     constantDefinitions,
+                    staticFieldDefinitions,
                     diagnostics,
                     isShaderEntryPoint);
 

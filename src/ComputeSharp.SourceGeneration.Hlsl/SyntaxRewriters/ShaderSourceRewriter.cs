@@ -63,6 +63,7 @@ internal sealed partial class ShaderSourceRewriter : HlslSourceRewriter
     /// <param name="discoveredTypes">The set of discovered custom types.</param>
     /// <param name="staticMethods">The set of discovered and processed static methods.</param>
     /// <param name="constantDefinitions">The collection of discovered constant definitions.</param>
+    /// <param name="staticFieldDefinitions">The collection of discovered static field definitions.</param>
     /// <param name="diagnostics">The collection of produced <see cref="Diagnostic"/> instances.</param>
     /// <param name="isEntryPoint">Whether or not the current instance is processing a shader entry point.</param>
     public ShaderSourceRewriter(
@@ -71,9 +72,10 @@ internal sealed partial class ShaderSourceRewriter : HlslSourceRewriter
         ICollection<INamedTypeSymbol> discoveredTypes,
         IDictionary<IMethodSymbol, MethodDeclarationSyntax> staticMethods,
         IDictionary<IFieldSymbol, string> constantDefinitions,
+        ICollection<IFieldSymbol> staticFieldDefinitions,
         ImmutableArray<Diagnostic>.Builder diagnostics,
         bool isEntryPoint)
-        : base(semanticModel, discoveredTypes, constantDefinitions, diagnostics)
+        : base(semanticModel, discoveredTypes, constantDefinitions, staticFieldDefinitions, diagnostics)
     {
         this.shaderType = shaderType;
         this.staticMethods = staticMethods;
@@ -89,14 +91,16 @@ internal sealed partial class ShaderSourceRewriter : HlslSourceRewriter
     /// <param name="discoveredTypes">The set of discovered custom types.</param>
     /// <param name="staticMethods">The set of discovered and processed static methods.</param>
     /// <param name="constantDefinitions">The collection of discovered constant definitions.</param>
+    /// <param name="staticFieldDefinitions">The collection of discovered static field definitions.</param>
     /// <param name="diagnostics">The collection of produced <see cref="Diagnostic"/> instances.</param>
     public ShaderSourceRewriter(
         SemanticModelProvider semanticModel,
         ICollection<INamedTypeSymbol> discoveredTypes,
         IDictionary<IMethodSymbol, MethodDeclarationSyntax> staticMethods,
         IDictionary<IFieldSymbol, string> constantDefinitions,
+        ICollection<IFieldSymbol> staticFieldDefinitions,
         ImmutableArray<Diagnostic>.Builder diagnostics)
-        : base(semanticModel, discoveredTypes, constantDefinitions, diagnostics)
+        : base(semanticModel, discoveredTypes, constantDefinitions, staticFieldDefinitions, diagnostics)
     {
         this.staticMethods = staticMethods;
         this.implicitVariables = new();
@@ -387,7 +391,7 @@ internal sealed partial class ShaderSourceRewriter : HlslSourceRewriter
                             return updatedNode;
                         }
 
-                        ShaderSourceRewriter shaderSourceRewriter = new(SemanticModel, DiscoveredTypes, this.staticMethods, ConstantDefinitions, Diagnostics);
+                        ShaderSourceRewriter shaderSourceRewriter = new(SemanticModel, DiscoveredTypes, this.staticMethods, ConstantDefinitions, StaticFieldDefinitions, Diagnostics);
                         MethodDeclarationSyntax processedMethod = shaderSourceRewriter.Visit(methodNode)!.NormalizeWhitespace(eol: "\n").WithoutTrivia();
 
                         this.staticMethods.Add(method, processedMethod.WithIdentifier(Identifier(methodIdentifier)));

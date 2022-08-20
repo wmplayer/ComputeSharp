@@ -42,6 +42,11 @@ internal abstract partial class HlslSourceRewriter : CSharpSyntaxRewriter
     protected readonly IDictionary<IFieldSymbol, string> ConstantDefinitions;
 
     /// <summary>
+    /// The collection of discovered static field definitions.
+    /// </summary>
+    protected readonly ICollection<IFieldSymbol> StaticFieldDefinitions;
+
+    /// <summary>
     /// The collection of produced <see cref="Diagnostic"/> instances.
     /// </summary>
     protected readonly ImmutableArray<Diagnostic>.Builder Diagnostics;
@@ -52,16 +57,19 @@ internal abstract partial class HlslSourceRewriter : CSharpSyntaxRewriter
     /// <param name="semanticModel">The <see cref="Microsoft.CodeAnalysis.SemanticModel"/> instance for the target syntax tree.</param>
     /// <param name="discoveredTypes">The set of discovered custom types.</param>
     /// <param name="constantDefinitions">The collection of discovered constant definitions.</param>
+    /// <param name="staticFieldDefinitions">The collection of discovered static field definitions.</param>
     /// <param name="diagnostics">The collection of produced <see cref="Diagnostic"/> instances.</param>
     protected HlslSourceRewriter(
         SemanticModelProvider semanticModel,
         ICollection<INamedTypeSymbol> discoveredTypes,
         IDictionary<IFieldSymbol, string> constantDefinitions,
+        ICollection<IFieldSymbol> staticFieldDefinitions,
         ImmutableArray<Diagnostic>.Builder diagnostics)
     {
         SemanticModel = semanticModel;
         DiscoveredTypes = discoveredTypes;
         ConstantDefinitions = constantDefinitions;
+        StaticFieldDefinitions = staticFieldDefinitions;
         Diagnostics = diagnostics;
     }
 

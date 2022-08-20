@@ -50,6 +50,7 @@ partial class IShaderGenerator
             HashSet<INamedTypeSymbol> discoveredTypes = new(SymbolEqualityComparer.Default);
             Dictionary<IMethodSymbol, MethodDeclarationSyntax> staticMethods = new(SymbolEqualityComparer.Default);
             Dictionary<IFieldSymbol, string> constantDefinitions = new(SymbolEqualityComparer.Default);
+            HashSet<IFieldSymbol> staticFieldDefinitions = new(SymbolEqualityComparer.Default);
 
             // A given type can only represent a single shader type
             if (structDeclarationSymbol.AllInterfaces.Count(static interfaceSymbol => interfaceSymbol is { Name: nameof(IComputeShader) } or { IsGenericType: true, Name: nameof(IPixelShader<byte>) }) > 1)
@@ -65,9 +66,9 @@ partial class IShaderGenerator
             var (resourceFields, valueFields) = GetInstanceFields(builder, structDeclarationSymbol, discoveredTypes, isComputeShader);
             var delegateInstanceFields = GetDispatchId.GetInfo(structDeclarationSymbol);
             var sharedBuffers = GetSharedBuffers(builder, structDeclarationSymbol, discoveredTypes);
-            var (entryPoint, processedMethods, isSamplerUsed) = GetProcessedMethods(builder, structDeclaration, structDeclarationSymbol, semanticModelProvider, discoveredTypes, staticMethods, constantDefinitions, isComputeShader);
+            var (entryPoint, processedMethods, isSamplerUsed) = GetProcessedMethods(builder, structDeclaration, structDeclarationSymbol, semanticModelProvider, discoveredTypes, staticMethods, constantDefinitions, staticFieldDefinitions, isComputeShader);
             var implicitSamplerField = isSamplerUsed ? ("SamplerState", "__sampler") : default((string, string)?);
-            var staticFields = GetStaticFields(builder, semanticModelProvider, structDeclaration, structDeclarationSymbol, discoveredTypes, constantDefinitions);
+            var staticFields = GetStaticFields(builder, semanticModelProvider, structDeclaration, structDeclarationSymbol, discoveredTypes, constantDefinitions, staticFieldDefinitions);
 
             // Process the discovered types and constants
             var declaredTypes = GetDeclaredTypes(builder, structDeclarationSymbol, discoveredTypes);
@@ -192,6 +193,7 @@ partial class IShaderGenerator
         /// <param name="structDeclarationSymbol">The type symbol for the shader type.</param>
         /// <param name="discoveredTypes">The collection of currently discovered types.</param>
         /// <param name="constantDefinitions">The collection of discovered constant definitions.</param>
+        /// <param name="staticFieldDefinitions">The collection of discovered static field definitions.</param>
         /// <returns>A sequence of static constant fields in <paramref name="structDeclarationSymbol"/>.</returns>
         private static ImmutableArray<(string Name, string TypeDeclaration, string? Assignment)> GetStaticFields(
             ImmutableArray<Diagnostic>.Builder diagnostics,
@@ -199,7 +201,8 @@ partial class IShaderGenerator
             StructDeclarationSyntax structDeclaration,
             INamedTypeSymbol structDeclarationSymbol,
             ICollection<INamedTypeSymbol> discoveredTypes,
-            IDictionary<IFieldSymbol, string> constantDefinitions)
+            IDictionary<IFieldSymbol, string> constantDefinitions,
+            ICollection<IFieldSymbol> staticFieldDefinitions)
         {
             ImmutableArray<(string, string, string?)>.Builder builder = ImmutableArray.CreateBuilder<(string, string, string?)>();
 
@@ -242,6 +245,7 @@ partial class IShaderGenerator
                         semanticModel,
                         discoveredTypes,
                         constantDefinitions,
+                        staticFieldDefinitions,
                         diagnostics);
 
                     string? assignment = staticFieldRewriter.Visit(variableDeclarator)?.NormalizeWhitespace(eol: "\n").ToFullString();
@@ -319,6 +323,7 @@ partial class IShaderGenerator
         /// <param name="discoveredTypes">The collection of currently discovered types.</param>
         /// <param name="staticMethods">The set of discovered and processed static methods.</param>
         /// <param name="constantDefinitions">The collection of discovered constant definitions.</param>
+        /// <param name="staticFieldDefinitions">The collection of discovered static field definitions.</param>
         /// <param name="isComputeShader">Indicates whether or not <paramref name="structDeclarationSymbol"/> represents a compute shader.</param>
         /// <returns>A sequence of processed methods in <paramref name="structDeclaration"/>, and the entry point.</returns>
         private static (string EntryPoint, ImmutableArray<(string Signature, string Definition)> Methods, bool IsSamplerUser) GetProcessedMethods(
@@ -329,6 +334,7 @@ partial class IShaderGenerator
             ICollection<INamedTypeSymbol> discoveredTypes,
             IDictionary<IMethodSymbol, MethodDeclarationSyntax> staticMethods,
             IDictionary<IFieldSymbol, string> constantDefinitions,
+            ICollection<IFieldSymbol> staticFieldDefinitions,
             bool isComputeShader)
         {
             // Find all declared methods in the type
@@ -369,6 +375,7 @@ partial class IShaderGenerator
                     discoveredTypes,
                     staticMethods,
                     constantDefinitions,
+                    staticFieldDefinitions,
                     diagnostics,
                     isShaderEntryPoint);
 
