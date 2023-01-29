@@ -88,8 +88,8 @@ public sealed partial class ShaderMethodSourceGenerator : IIncrementalGenerator
             // Explore the syntax tree and extract the processed info
             SemanticModelProvider semanticModel = new(compilation);
             (string entryPoint, ImmutableArray<(string Signature, string Definition)> dependentMethods) = GetProcessedMethods(builder, methodDeclaration, semanticModel, discoveredTypes, constantDefinitions);
-            ImmutableArray<(string Name, string Definition)> definedTypes = IShaderGenerator.BuildHlslSource.GetDeclaredTypes(builder, methodSymbol, discoveredTypes, instanceMethods);
-            ImmutableArray<(string Name, string Value)> definedConstants = IShaderGenerator.BuildHlslSource.GetDefinedConstants(constantDefinitions);
+            ImmutableArray<(string Name, string Definition)> definedTypes = HlslDefinitionsHelper.GetDeclaredTypes(builder, methodSymbol, discoveredTypes, instanceMethods);
+            ImmutableArray<(string Name, string Value)> definedConstants = HlslDefinitionsHelper.GetDefinedConstants(constantDefinitions);
 
             diagnostics = builder.ToImmutable();
 
