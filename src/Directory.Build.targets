@@ -37,6 +37,14 @@
     <EnableSingleFileAnalyzer>true</EnableSingleFileAnalyzer>
   </PropertyGroup>
 
+  <!-- Emit the [DisableRuntimeMarshalling] attribute for all .NET 6 projects -->
+  <Target Name="EmitDisableRuntimeMarshallingAttribute"
+          BeforeTargets="PrepareForBuild">
+    <ItemGroup Condition="$(TargetFramework.StartsWith('net6.0'))">
+      <AssemblyAttribute Include="System.Runtime.CompilerServices.DisableRuntimeMarshallingAttribute"/>
+    </ItemGroup>
+  </Target>
+
   <!-- Emit the [SupportedOSVersion] attribute if needed -->
   <Target Name="EmitSupportedOSVersionAttributeForTargetOS"
           BeforeTargets="PrepareForBuild">
