@@ -13,6 +13,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)ContouredLayers.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)FractalTiling.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)HelloWorld.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)JoshEffects.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)MengerJourney.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Octagrams.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ProteanClouds.cs" />
